@@ -898,6 +898,51 @@ function renderSysInfo() {
     renderSysInfo();
     update();
     setInterval(update, 2000);
+    // --- СИНХРОНИЗАЦИЯ С ESP8266 ---
+    async function updateFromVercel() {
+        try {
+            const response = await fetch('/api/data');
+            const data = await response.json();
+
+            // Ако имаме данни от сензорите (не са нули)
+            if (data.temp && data.temp !== 0) {
+                // 1. Обновяваме дисплея
+                document.getElementById('tds-val').innerText = data.tds.toFixed(2);
+                document.getElementById('temp-val').innerText = data.temp.toFixed(1);
+                
+                // 2. Обновяваме текстовото поле в Plateau Engine
+                const plateau = document.getElementById('plateau-status');
+                if(plateau) {
+                    plateau.innerHTML = `LIDAR: ${data.dist}mm | EC: ${data.ec.toFixed(2)} mS/cm<br>Статус: АКТИВЕН`;
+                }
+
+                // 3. Обновяваме графиката
+                mainChart.data.datasets[0].data.push(data.tds);
+                if (mainChart.data.datasets[0].data.length > 30) {
+                    mainChart.data.datasets[0].data.shift();
+                }
+                mainChart.update('none');
+
+                // 4. Лог в терминала
+                const term = document.getElementById('terminal');
+                if(term) {
+                    const time = new Date().toLocaleTimeString();
+                    term.innerHTML += `<div class="log-line"><span class="log-time">[${time}]</span> <span style="color:#00f2ff">>></span> DATA_SYNC_SUCCESS (HTTP 200)</div>`;
+                    term.scrollTop = term.scrollHeight;
+                }
+            }
+        } catch (err) {
+            console.error("Грешка при четене на API:", err);
+        }
+    }
+
+    // Проверявай за нови данни на всеки 3 секунди
+    setInterval(updateFromVercel, 3000);
+
+    // Часовник (това си го имаш)
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
 })();
 </script>
 </body>
