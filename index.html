@@ -3,350 +3,884 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASOA | Advanced System for Artifact Analysis</title>
+    <title>ASOA - Conservation OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
-        /* CSS СТИЛОВЕ */
-        :root {
-            --bg-deep: #05050a;
-            --panel-bg: #0d0d1a;
-            --accent: #00f2ff;
-            --danger: #ff003c;
-            --success: #00ff41;
-            --warning: #ffea00;
-            --text-dim: #555;
-        }
-
+        * { box-sizing: border-box; }
         body {
-            background: var(--bg-deep);
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            overflow-x: hidden;
-            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #05050a; color: #e0e0e0;
+            margin: 0; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
         }
-
-        /* LAYOUT */
-        .container { display: grid; grid-template-columns: 300px 1fr 300px; height: 100vh; gap: 1px; background: #111; }
-        .side-panel { background: var(--panel-bg); display: flex; flex-direction: column; overflow-y: auto; }
-        .main-view { background: var(--bg-deep); display: flex; flex-direction: column; position: relative; }
-
-        /* HEADER */
-        header { padding: 15px; border-bottom: 1px solid #1a1a2e; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-weight: 900; letter-spacing: 2px; color: var(--accent); }
-        #clock { font-family: monospace; color: var(--text-dim); }
-
-        /* TABS & NAVIGATION */
-        nav { display: flex; background: #08080f; border-bottom: 1px solid #1a1a2e; }
-        .nav-btn { flex: 1; padding: 12px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 10px; font-weight: 700; text-transform: uppercase; border-right: 1px solid #1a1a2e; }
-        .nav-btn.active { color: var(--accent); background: rgba(0, 242, 255, 0.05); box-shadow: inset 0 -2px 0 var(--accent); }
-
-        /* PANELS */
-        .tab-panel { display: none; padding: 20px; flex: 1; overflow-y: auto; }
-        .tab-panel.active { display: block; }
-
-        /* CARDS & ELEMENTS */
-        .card-dark { background: rgba(255,255,255,0.02); border: 1px solid #1a1a2e; border-radius: 4px; padding: 15px; margin-bottom: 15px; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        
-        /* TERMINAL */
-        #terminal { background: #000; height: 180px; overflow-y: auto; padding: 10px; font-family: 'Courier New', monospace; border-top: 1px solid #1a1a2e; font-size: 11px; }
-        .log-line { margin-bottom: 4px; border-left: 2px solid #222; padding-left: 8px; }
-        .log-time { color: #444; margin-right: 8px; }
-        .log-arrow { color: var(--accent); margin-right: 8px; }
-
-        /* INPUTS */
-        input, select, textarea { 
-            background: #05050a; border: 1px solid #1a1a2e; color: #fff; padding: 8px; 
-            width: 100%; box-sizing: border-box; margin-bottom: 10px; border-radius: 2px;
+        header {
+            height: 56px; flex-shrink: 0; border-bottom: 1px solid #111;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; background: rgba(0,0,0,.5); backdrop-filter: blur(12px); z-index: 50;
         }
-        button.action-btn { 
-            background: var(--accent); color: #000; border: none; padding: 10px; 
-            width: 100%; font-weight: 900; cursor: pointer; text-transform: uppercase;
+        main { flex: 1; padding: 16px; display: flex; gap: 16px; overflow: hidden; }
+        footer {
+            height: 32px; flex-shrink: 0; background: #000; border-top: 1px solid #111;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+            font-size: 8px; text-transform: uppercase; letter-spacing: .15em; font-weight: 700; color: #333;
         }
-
-        /* ARCHIVE & LISTS */
-        .arc-item { 
-            display: flex; align-items: center; gap: 15px; padding: 12px; 
-            border-bottom: 1px solid #111; cursor: pointer; transition: background .2s;
+        .tab-panel { flex: 1; display: none; gap: 16px; overflow: hidden; animation: fadeIn .3s ease; }
+        .tab-panel.active { display: flex; }
+        .tab-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 2px; }
+        .nav-btn {
+            padding: 18px 16px; font-size: 10px; text-transform: uppercase; letter-spacing: .15em;
+            font-weight: 700; color: #444; background: transparent; border: none; cursor: pointer;
+            transition: color .2s; white-space: nowrap; font-family: 'JetBrains Mono', monospace;
         }
-        .arc-item:hover { background: rgba(255,255,255,0.03); }
-        .arc-bar { width: 4px; height: 40px; border-radius: 2px; }
-
-        /* MODAL */
-        #arc-modal { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;
+        .nav-btn:hover { color: #fff; }
+        .nav-btn.active { color: #00f2ff; border-bottom: 2px solid #00f2ff; background: rgba(0,242,255,.05); }
+        .card     { border: 1px solid #1a1a2e; background: #0a0a0f; border-radius: 4px; }
+        .card-glow { box-shadow: 0 0 20px rgba(0,242,255,.1); }
+        .card-dark { border: 1px solid #0d0d1a; background: #07070a; }
+        .mode-btn {
+            padding: 4px 10px; font-size: 9px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase; cursor: pointer; transition: all .2s; background: transparent;
+        }
+        .mode-btn.active   { color: #00f2ff; border: 1px solid #00f2ff; }
+        .mode-btn.inactive { color: #444;    border: 1px solid #1a1a2e; }
+        .mode-btn:hover:not(.active) { color: #888; border-color: #333; }
+        input, select, textarea {
+            width: 100%; background: rgba(0,0,0,.6); border: 1px solid #1a1a2e;
+            padding: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace;
+            color: #fff; outline: none; transition: border-color .2s;
+        }
+        input:focus, textarea:focus { border-color: #00f2ff; }
+        select option { background: #0a0a0f; }
+        .btn-primary {
+            width: 100%; padding: 12px; background: #00f2ff; color: #000;
+            font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 10px;
+            text-transform: uppercase; letter-spacing: .15em; border: none; cursor: pointer; transition: background .2s;
+        }
+        .btn-primary:hover { background: #00d8e6; }
+        .btn-green {
+            display: inline-flex; align-items: center; gap: 7px;
+            border: 1px solid rgba(0,255,65,.25); padding: 8px 12px;
+            font-size: 9px; color: #00ff41; font-weight: 800;
+            font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+            letter-spacing: .12em; background: transparent; cursor: pointer; transition: all .2s;
+        }
+        .btn-green:hover  { background: #00ff41; color: #000; }
+        .btn-ghost {
+            padding: 8px 16px; font-size: 9px; color: #444; border: 1px solid #0d0d1a;
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            text-transform: uppercase; background: transparent; cursor: pointer; transition: all .2s;
+        }
+        .btn-ghost:hover { color: #fff; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+        .dot-on  { background: #00ff41; box-shadow: 0 0 6px #00ff41; animation: blinkDot 2s infinite; }
+        .dot-off { background: #ff003c; }
+        #terminal { font-size: 9px; }
+        .log-line  { color: #666; margin-bottom: 2px; }
+        .log-time  { color: #333; margin-right: 8px; }
+        .log-arrow { color: #00f2ff; margin-right: 4px; }
+        .artifact-item {
+            padding: 12px 16px; border: 1px solid #1a1a2e; background: rgba(255,255,255,.03);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .artifact-item .artifact-action { font-size: 10px; font-weight: 700; color: #00f2ff; opacity: 0; transition: opacity .2s; cursor: pointer; }
+        .artifact-item:hover .artifact-action { opacity: 1; }
+        .arc-item {
+            background: #07070a; border: 1px solid #0d0d1a;
+            padding: 16px 20px; display: flex; align-items: center; gap: 16px;
+            cursor: pointer; transition: border-color .2s; position: relative; overflow: hidden;
+        }
+        .arc-item:hover { border-color: rgba(0,255,65,.2); }
+        .arc-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+        .node-item {
+            border: 1px solid #0d0d1a; padding: 16px;
+            display: flex; align-items: center; justify-content: space-between; transition: border-color .2s;
+        }
+        .node-item:hover { border-color: rgba(0,242,255,.12); }
+        .data-table { width: 100%; font-size: 9px; font-family: 'JetBrains Mono', monospace; border-collapse: collapse; }
+        .data-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #0d0d1a; color: #444; text-transform: uppercase; font-weight: 700; }
+        .data-table th.r, .data-table td.r { text-align: right; }
+        .data-table td { padding: 8px 10px; border-bottom: 1px solid #050508; transition: background .15s; }
+        .data-table tr:hover td { background: rgba(13,13,26,.8); }
+        .data-table tr.ev td   { background: rgba(255,234,0,.03); }
+        .info-cell { background: #0a0a0f; border: 1px solid #0d0d1a; padding: 12px; }
+        #chart-wrapper { position: relative; height: 100%; min-height: 0; }
+        #node-form { display: none; margin-bottom: 16px; padding: 16px; border: 1px dashed rgba(0,255,65,.2); background: rgba(0,255,65,.03); }
+        #arc-modal {
+            display: none; position: fixed; inset: 0; z-index: 60;
+            align-items: center; justify-content: center; padding: 16px;
+            background: rgba(0,0,0,.85); backdrop-filter: blur(4px);
         }
         #arc-modal.open { display: flex; }
-        .modal-box { background: var(--panel-bg); width: 500px; border: 1px solid #1a1a2e; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-
-        /* CHARTS */
-        .chart-container { height: 250px; position: relative; margin-top: 20px; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #05050a; }
+        ::-webkit-scrollbar-thumb { background: #1a1a2e; border-radius: 10px; }
+        @keyframes fadeIn    { from { opacity:0; transform:translateX(6px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes blinkDot  { 0%,100%{opacity:1} 50%{opacity:.3} }
+        .blink { animation: blinkDot 2s infinite; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="side-panel">
-        <header><div class="logo">REGISTRY</div></header>
-        <div style="padding: 20px;">
-            <div class="card-dark">
-                <div style="font-size: 9px; color: var(--text-dim); margin-bottom: 5px;">TOTAL RECORDS</div>
-                <div id="artifact-count" style="font-size: 24px; font-weight: 900;">0 RECORDS</div>
+<!-- ═══════  HEADER  ═══════ -->
+<header>
+    <div style="display:flex;align-items:center;gap:16px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:32px;height:32px;background:#00f2ff;border-radius:4px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 15px rgba(0,242,255,.4);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            
-            <div class="card-dark">
-                <input type="text" id="art-name" placeholder="Artifact Name...">
-                <select id="art-type">
-                    <option value="GLASS">GLASS</option>
-                    <option value="CERAMIC">CERAMIC</option>
-                    <option value="STONE">STONE</option>
-                    <option value="METAL">METAL</option>
-                </select>
-                <textarea id="art-desc" placeholder="Brief description..."></textarea>
-                <button class="action-btn" onclick="addArtifact()">Add to Database</button>
+            <div>
+                <div style="font-size:18px;font-weight:800;letter-spacing:-.05em;color:#fff;line-height:1;">ASOA</div>
+                <div style="font-size:9px;color:#00f2ff;letter-spacing:.3em;font-weight:700;">CORE-LINK OS</div>
             </div>
         </div>
-        <div id="art-list" style="flex: 1; overflow-y: auto; border-top: 1px solid #111;"></div>
-    </div>
-
-    <div class="main-view">
-        <header>
-            <div class="logo">ASOA // MONITOR</div>
-            <div id="clock">00:00:00</div>
-            <button id="lang-toggle" onclick="toggleLanguage()" style="background:transparent; border:1px solid #222; color:#555; padding:2px 8px; cursor:pointer;">EN</button>
-        </header>
-
-        <nav>
-            <button class="nav-btn active" id="btn-realtime" onclick="showTab('realtime')">Real-time Data</button>
-            <button class="nav-btn" id="btn-analysis" onclick="showTab('analysis')">Analysis</button>
-            <button class="nav-btn" id="btn-config" onclick="showTab('config')">System Config</button>
+        <nav style="display:flex;align-items:center;height:56px;margin-left:40px;">
+            <button class="nav-btn active" id="btn-monitor"  data-bg="Мониторинг" data-en="Monitoring" onclick="showTab('monitor')">Мониторинг</button>
+            <button class="nav-btn"        id="btn-registry" data-bg="Регистър"   data-en="Registry"   onclick="showTab('registry')">Регистър</button>
+            <button class="nav-btn"        id="btn-analysis" data-bg="Анализ"     data-en="Analysis"   onclick="showTab('analysis')">Анализ</button>
+            <button class="nav-btn"        id="btn-config"   data-bg="Конфиг"     data-en="Config"     onclick="showTab('config')">Конфиг</button>
         </nav>
-
-        <div id="tab-realtime" class="tab-panel active">
-            <div class="stat-grid">
-                <div class="card-dark">
-                    <div style="color:var(--accent); font-size:10px; font-weight:900;">TDS LEVEL (ppt)</div>
-                    <div id="tds-val" style="font-size:42px; font-weight:900;">0.00</div>
-                </div>
-                <div class="card-dark">
-                    <div style="color:var(--warning); font-size:10px; font-weight:900;">TEMPERATURE (°C)</div>
-                    <div id="temp-val" style="font-size:42px; font-weight:900;">0.0</div>
-                </div>
-            </div>
-            
-            <div class="card-dark">
-                <div id="plateau-status" style="font-family:monospace; font-size:11px; color:#888;">Initializing Plateau Engine...</div>
-            </div>
-
-            <div class="chart-container">
-                <canvas id="mainChart"></canvas>
-            </div>
-        </div>
-
-        <div id="tab-analysis" class="tab-panel">
-            <div id="arc-stats" class="stat-grid"></div>
-            <div id="arc-list"></div>
-        </div>
-
-        <div id="tab-config" class="tab-panel">
-            <div id="sysinfo-grid" class="stat-grid"></div>
-            <div class="card-dark">
-                <button class="action-btn" onclick="toggleNodeForm()">+ Add Network Node</button>
-                <div id="node-form" style="display:none; margin-top:15px;">
-                    <input type="text" id="node-id" placeholder="Node ID (e.g. ESP-04)">
-                    <input type="text" id="node-ip" placeholder="IP Address">
-                    <button class="action-btn" style="background:#222; color:#fff;" onclick="addNode()">Register</button>
-                </div>
-            </div>
-            <div id="node-list"></div>
-        </div>
-
-        <div id="terminal"></div>
     </div>
+    <div style="display:flex;align-items:center;gap:16px;font-size:10px;font-weight:700;">
+        <button id="lang-toggle" onclick="toggleLanguage()"
+                style="padding:4px 12px;border:1px solid #333;color:#00f2ff;background:transparent;font-family:'JetBrains Mono',monospace;font-weight:700;cursor:pointer;border-radius:2px;transition:border-color .2s;">EN</button>
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 12px;background:rgba(255,255,255,.05);border-radius:20px;border:1px solid rgba(255,255,255,.1);">
+            <span class="blink" style="color:#00f2ff;">●</span>
+            <span id="ref-label" style="opacity:.7;">REF: Черно Море (15.5 ppt)</span>
+        </div>
+        <span id="clock" style="color:#888;">00:00:00</span>
+    </div>
+</header>
 
-    <div class="side-panel">
-        <header><div class="logo">MATRIX</div></header>
-        <div style="padding:15px;">
-            <table style="width:100%; font-size:10px; border-collapse: collapse;">
-                <thead>
-                    <tr style="text-align:left; color:#444;">
-                        <th>MODE</th>
-                        <th class="r">TARGET</th>
-                        <th class="r">STATUS</th>
-                    </tr>
-                </thead>
-                <tbody id="matrix-tbody"></tbody>
-            </table>
+<!-- ═══════  MAIN  ═══════ -->
+<main>
+
+<!-- ─────── MONITOR ─────── -->
+<div id="tab-monitor" class="tab-panel active">
+    <div style="width:280px;display:flex;flex-direction:column;gap:16px;flex-shrink:0;">
+        <div class="card card-glow" style="padding:20px;">
+            <div class="lang-text" data-bg="Соленост (TDS)" data-en="Salinity (TDS)"
+                 style="font-size:10px;color:#444;text-transform:uppercase;font-weight:700;margin-bottom:12px;font-style:italic;">Соленост (TDS)</div>
+            <div style="display:flex;align-items:baseline;gap:8px;">
+                <span id="tds-val" style="font-size:48px;font-weight:900;color:#fff;letter-spacing:-.05em;line-height:1;">15.20</span>
+                <span style="font-size:11px;color:#444;font-weight:700;font-style:italic;">ppt</span>
+            </div>
+        </div>
+        <div class="card" style="padding:20px;">
+            <div class="lang-text" data-bg="Температура" data-en="Temperature"
+                 style="font-size:10px;color:#444;text-transform:uppercase;font-weight:700;margin-bottom:12px;font-style:italic;">Температура</div>
+            <div style="display:flex;align-items:baseline;gap:8px;">
+                <span id="temp-val" style="font-size:36px;font-weight:900;color:#fff;letter-spacing:-.05em;line-height:1;">18.5</span>
+                <span style="font-size:11px;color:#444;font-weight:700;font-style:italic;">°C</span>
+            </div>
+        </div>
+        <div class="card" style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:space-between;border-left:3px solid #00f2ff;">
+            <div>
+                <h3 style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#00f2ff;margin:0 0 12px;">Plateau Engine</h3>
+                <div id="plateau-status" style="font-size:10px;background:rgba(0,0,0,.4);padding:12px;border:1px solid rgba(255,255,255,.05);border-radius:4px;line-height:1.7;min-height:60px;">
+                    <span class="lang-text" data-bg="Инициализиране..." data-en="Initializing...">Инициализиране...</span>
+                </div>
+            </div>
+            <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center;font-size:10px;">
+                <span class="lang-text" data-bg="Протокол:" data-en="Protocol:" style="color:#444;font-weight:700;">Протокол:</span>
+                <span style="color:#fff;font-weight:700;letter-spacing:.15em;">AUST-21</span>
+            </div>
+        </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:16px;min-width:0;">
+        <div class="card" style="flex:1;padding:24px;display:flex;flex-direction:column;min-height:0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-shrink:0;">
+                <h2 class="lang-text" data-bg="Телеметрия в реално време" data-en="Real-time Telemetry"
+                    style="font-size:16px;font-weight:900;letter-spacing:-.03em;text-transform:uppercase;font-style:italic;color:#fff;margin:0;">
+                    Телеметрия в реално време
+                </h2>
+                <div style="display:flex;gap:8px;">
+                    <button id="btn-mode-glass"   class="mode-btn active"   onclick="setMode('GLASS')"><span class="lang-text" data-bg="Стъкло" data-en="Glass">Стъкло</span></button>
+                    <button id="btn-mode-ceramic" class="mode-btn inactive" onclick="setMode('CERAMIC')"><span class="lang-text" data-bg="Керамика" data-en="Ceramic">Керамика</span></button>
+                </div>
+            </div>
+            <div id="chart-wrapper" style="flex:1;position:relative;min-height:0;"><canvas id="mainChart"></canvas></div>
+        </div>
+        <div class="card" style="height:130px;padding:14px;display:flex;flex-direction:column;flex-shrink:0;">
+            <div class="lang-text" data-bg="Системен терминал" data-en="System Terminal"
+                 style="font-size:10px;font-weight:700;color:#444;text-transform:uppercase;margin-bottom:8px;flex-shrink:0;">Системен терминал</div>
+            <div id="terminal" style="flex:1;overflow-y:auto;"></div>
         </div>
     </div>
 </div>
 
+<!-- ─────── REGISTRY ─────── -->
+<div id="tab-registry" class="tab-panel">
+    <div class="card" style="width:360px;flex-shrink:0;padding:24px;background:rgba(0,0,0,.4);">
+        <h3 class="lang-text" data-bg="Нов Артефакт" data-en="New Artifact"
+            style="color:#00f2ff;font-weight:900;text-transform:uppercase;letter-spacing:.15em;margin:0 0 20px;padding-bottom:8px;border-bottom:1px solid #1a1a2e;font-size:13px;">Нов Артефакт</h3>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+                <label class="lang-text" data-bg="Наименование" data-en="Label"
+                       style="display:block;font-size:9px;color:#444;text-transform:uppercase;font-weight:700;margin-bottom:4px;">Наименование</label>
+                <input id="art-name" type="text" placeholder="...">
+            </div>
+            <div>
+                <label class="lang-text" data-bg="Тип материал" data-en="Material Type"
+                       style="display:block;font-size:9px;color:#444;text-transform:uppercase;font-weight:700;margin-bottom:4px;">Тип материал</label>
+                <select id="art-type">
+                    <option value="GLASS">Стъкло / Glass</option>
+                    <option value="CERAMIC">Керамика / Ceramic</option>
+                    <option value="STONE">Камък / Stone</option>
+                    <option value="METAL">Метал / Metal</option>
+                </select>
+            </div>
+            <div>
+                <label class="lang-text" data-bg="Описание/Локация" data-en="Description/Loc"
+                       style="display:block;font-size:9px;color:#444;text-transform:uppercase;font-weight:700;margin-bottom:4px;">Описание/Локация</label>
+                <textarea id="art-desc" rows="3" style="resize:none;"></textarea>
+            </div>
+            <button class="btn-primary lang-text" data-bg="Добави в базата" data-en="Register Artifact" onclick="addArtifact()">Добави в базата</button>
+        </div>
+    </div>
+    <div class="card" style="flex:1;padding:24px;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0;">
+            <h3 class="lang-text" data-bg="Активен Регистър" data-en="Active Registry"
+                style="color:#444;font-weight:900;text-transform:uppercase;letter-spacing:.15em;font-size:11px;margin:0;">Активен Регистър</h3>
+            <span id="artifact-count" style="font-size:10px;font-weight:700;color:#00f2ff;">1 запис</span>
+        </div>
+        <div id="art-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+            <div class="artifact-item">
+                <div>
+                    <div style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;">#001 — Амфора (Пример)</div>
+                    <div style="font-size:9px;color:#444;margin-top:3px;">CERAMIC | Созопол / 2024</div>
+                </div>
+                <span class="artifact-action">ACTIVE</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─────── ANALYSIS ─────── -->
+<div id="tab-analysis" class="tab-panel" style="flex-direction:column;">
+    <div class="tab-scroll">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;border-bottom:1px solid #0d0d1a;flex-shrink:0;">
+            <h2 class="lang-text" data-bg="Анализ &amp; История" data-en="Analysis &amp; History"
+                style="font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:#00f2ff;margin:0;">Анализ &amp; История</h2>
+            <div style="font-size:9px;color:#444;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+                ◷ <span class="lang-text" data-bg="30-минутни логове" data-en="30-min logs">30-минутни логове</span>
+            </div>
+        </div>
+
+        <!-- Sensor log -->
+        <div class="card-dark" style="padding:20px;">
+            <h3 style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#ffea00;margin:0 0 14px;display:flex;align-items:center;gap:8px;">
+                ⬡ <span class="lang-text" data-bg="Автоматичен Сензорен Журнал" data-en="Automated Sensor Journal">Автоматичен Сензорен Журнал</span>
+            </h3>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead><tr>
+                        <th class="lang-text" data-bg="Час"      data-en="Time">Час</th>
+                        <th class="r">TDS (ppt)</th>
+                        <th class="r">EC (mS/cm)</th>
+                        <th class="r lang-text" data-bg="Темп (°C)" data-en="Temp (°C)">Темп (°C)</th>
+                        <th class="r lang-text" data-bg="Ниво (%)"  data-en="Level (%)">Ниво (%)</th>
+                        <th class="lang-text"   data-bg="Събитие"   data-en="Event">Събитие</th>
+                    </tr></thead>
+                    <tbody id="log-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Archive header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;">
+            <h2 class="lang-text" data-bg="Архив на Завършени Проекти" data-en="Completed Projects Archive"
+                style="font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:#00ff41;margin:0;">Архив на Завършени Проекти</h2>
+            <div id="arc-count-label" style="font-size:9px;color:#444;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:6px;">
+                ◫ 4 <span class="lang-text" data-bg="записа" data-en="records">записа</span>
+            </div>
+        </div>
+
+        <div id="arc-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <div id="arc-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-bottom:4px;"></div>
+
+    </div>
+</div>
+
+<!-- ─────── CONFIG ─────── -->
+<div id="tab-config" class="tab-panel" style="flex-direction:column;">
+    <div class="tab-scroll">
+
+        <div style="padding-bottom:16px;border-bottom:1px solid #0d0d1a;flex-shrink:0;">
+            <h2 class="lang-text" data-bg="Системна Конфигурация" data-en="System Configuration"
+                style="font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;color:#00ff41;margin:0;">Системна Конфигурация</h2>
+        </div>
+
+        <!-- Nodes -->
+        <div class="card-dark" style="padding:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#fff;margin:0;display:flex;align-items:center;gap:8px;">
+                    ⬡ <span class="lang-text" data-bg="IoT Нодове (ESP32)" data-en="IoT Nodes (ESP32)">IoT Нодове (ESP32)</span>
+                </h3>
+                <button class="btn-green" onclick="toggleNodeForm()">
+                    + <span class="lang-text" data-bg="Добави нода" data-en="Add Node">Добави нода</span>
+                </button>
+            </div>
+            <div id="node-form">
+                <div style="font-size:9px;color:#00ff41;font-weight:900;text-transform:uppercase;letter-spacing:.15em;margin-bottom:12px;"
+                     class="lang-text" data-bg="Нов IoT Нод" data-en="New IoT Node">Нов IoT Нод</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                    <div>
+                        <label style="display:block;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Node ID</label>
+                        <input id="node-id" type="text" placeholder="ESP-04">
+                    </div>
+                    <div>
+                        <label class="lang-text" data-bg="Ime" data-en="Name"
+                               style="display:block;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Ime</label>
+                        <input id="node-name" type="text" placeholder="Tank B">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">IP Address</label>
+                        <input id="node-ip" type="text" placeholder="192.168.1.104">
+                    </div>
+                    <div>
+                        <label class="lang-text" data-bg="Режим" data-en="Mode"
+                               style="display:block;font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Режим</label>
+                        <select id="node-mode">
+                            <option value="GLASS">Стъкло / Glass</option>
+                            <option value="CERAMIC" selected>Керамика / Ceramic</option>
+                            <option value="STONE">Камък / Stone</option>
+                            <option value="METAL">Метал / Metal</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-green" onclick="addNode()">✓ <span class="lang-text" data-bg="Добави" data-en="Add">Добави</span></button>
+                    <button class="btn-ghost" onclick="toggleNodeForm()"><span class="lang-text" data-bg="Откажи" data-en="Cancel">Откажи</span></button>
+                </div>
+            </div>
+            <div id="node-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
+        <!-- Materials matrix -->
+        <div class="card-dark" style="padding:20px;">
+            <h3 style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#fff;margin:0 0 14px;display:flex;align-items:center;gap:8px;">
+                ◈ <span class="lang-text" data-bg="Матрица на Материалите" data-en="Materials Matrix">Матрица на Материалите</span>
+            </h3>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead><tr>
+                        <th class="lang-text" data-bg="Материал"      data-en="Material">Материал</th>
+                        <th class="r lang-text" data-bg="Старт Микс"  data-en="Start Mix">Старт Микс</th>
+                        <th class="r lang-text" data-bg="Цел TDS"     data-en="Target TDS">Цел TDS</th>
+                        <th class="r lang-text" data-bg="Цикъл (дни)" data-en="Cycle (days)">Цикъл (дни)</th>
+                        <th class="r lang-text" data-bg="Статус"      data-en="Status">Статус</th>
+                    </tr></thead>
+                    <tbody id="matrix-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System info -->
+        <div class="card-dark" style="padding:20px;padding-bottom:24px;">
+            <h3 style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#fff;margin:0 0 14px;display:flex;align-items:center;gap:8px;">
+                ◉ <span class="lang-text" data-bg="Системна Информация" data-en="System Info">Системна Информация</span>
+            </h3>
+            <div id="sysinfo-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;"></div>
+        </div>
+
+    </div>
+</div>
+
+</main>
+
+<!-- ═══════  ARCHIVE MODAL  ═══════ -->
 <div id="arc-modal">
-    <div class="modal-box" id="arc-modal-content"></div>
+    <div style="background:#07070a;border:1px solid rgba(0,255,65,.2);max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
+        <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,#00ff41,transparent);"></div>
+        <div id="arc-modal-content"></div>
+    </div>
 </div>
+
+<!-- ═══════  FOOTER  ═══════ -->
+<footer>
+    <div style="display:flex;gap:16px;align-items:center;">
+        <span style="display:flex;align-items:center;gap:5px;"><span class="dot dot-on"></span> LINK: ONLINE</span>
+        <span>|</span>
+        <span>DEVICE: ASOA-X1 ALPHA</span>
+    </div>
+    <div style="opacity:.35;font-style:italic;">© 2025 PROJECT ASOA | NATIONAL COMPETITION</div>
+</footer>
 
 <script>
+'use strict';
+
 // ══════════════════════════════════════════════════
-// DATA & STATE
+// DATA CONSTANTS
 // ══════════════════════════════════════════════════
-let currentLang = 'BG';
-let artifactCount = 0;
-let currentMode = 'GLASS';
-let mainChart;
+const MATERIAL_MODES = {
+    GLASS:   { name:'Стъкло',   nameEn:'Glass',   mix:'25%:75%',       target:12, cycle:21, color:'#00f2ff', icon:'🔷' },
+    CERAMIC: { name:'Керамика', nameEn:'Ceramic', mix:'50%:50%',       target:8,  cycle:14, color:'#ffea00', icon:'🏺' },
+    STONE:   { name:'Камък',    nameEn:'Stone',   mix:'75%:25%',       target:4,  cycle:7,  color:'#00ff41', icon:'🪨' },
+    METAL:   { name:'Метал',    nameEn:'Metal',   mix:'100%:0%+NaOH',  target:1,  cycle:2,  color:'#ff003c', icon:'⚔️' },
+};
+
+const ARCHIVE_DATA = [
+    { id:'ARC-001', name:'Бронзова Фибула', nameEn:'Bronze Fibula', mat:'Бронз', matEn:'Bronze',
+      img:'🔱', mode:'METAL',   startTds:16.0, endTds:0.4,  startDate:'2024-01-10', endDate:'2024-01-14',
+      discoverer:'Dr. Petrov',   gps:'43.2044°N 27.9100°E',
+      notes:'Успешно завършена десалинация. Артефактът е стабилизиран.',
+      notesEn:'Desalination completed successfully. Artifact stabilized.', outcome:'success' },
+    { id:'ARC-002', name:'Керамична Лампа', nameEn:'Ceramic Lamp',  mat:'Глина', matEn:'Clay',
+      img:'🏮', mode:'CERAMIC', startTds:16.0, endTds:7.8,  startDate:'2024-01-22', endDate:'2024-02-05',
+      discoverer:'Dr. Ivanova',  gps:'43.2049°N 27.9108°E',
+      notes:'Плато достигнато на ден 14. Без фрагментация.',
+      notesEn:'Plateau reached on day 14. No fragmentation observed.', outcome:'success' },
+    { id:'ARC-003', name:'Стъклено Шише',   nameEn:'Glass Bottle',  mat:'Стъкло',matEn:'Glass',
+      img:'🔮', mode:'GLASS',   startTds:16.0, endTds:12.1, startDate:'2024-02-12', endDate:'2024-03-05',
+      discoverer:'M. Georgieva', gps:'43.2037°N 27.9087°E',
+      notes:'Процесът е прекратен преждевременно поради пукнатина.',
+      notesEn:'Process terminated early due to crack formation.', outcome:'warning' },
+    { id:'ARC-004', name:'Оловна Котва',    nameEn:'Lead Anchor',   mat:'Олово', matEn:'Lead',
+      img:'⚓', mode:'METAL',   startTds:16.0, endTds:0.2,  startDate:'2024-02-28', endDate:'2024-03-02',
+      discoverer:'K. Stanchev',  gps:'43.2060°N 27.9118°E',
+      notes:'Химическа обработка с NaOH. Отличен резултат.',
+      notesEn:'Chemical treatment with NaOH. Excellent result.', outcome:'success' },
+];
+
+let NODES = [
+    { id:'ESP-01', name:'Primary Tank',  status:'online',  ip:'192.168.1.101', mode:'CERAMIC', uptime:'14d 6h', firmware:'v2.3.1' },
+    { id:'ESP-02', name:'Metal Lab',     status:'online',  ip:'192.168.1.102', mode:'METAL',   uptime:'3d 2h',  firmware:'v2.3.1' },
+    { id:'ESP-03', name:'Glass Chamber', status:'offline', ip:'192.168.1.103', mode:'GLASS',   uptime:'—',      firmware:'v2.2.9' },
+];
+
+const LOGS = Array.from({ length: 24 }, (_, i) => {
+    const h = Math.floor(i / 2), mn = i % 2 === 0 ? '00' : '30';
+    const tds = parseFloat(Math.max(0.1, 16 - i * 0.28 + Math.random() * 0.1).toFixed(2));
+    const evts = { 4:'Phase change triggered', 15:'Plateau detected (delta < 1%)' };
+    return {
+        time  : `${String(h).padStart(2,'0')}:${mn}`,
+        tds,
+        ec    : parseFloat((tds / 0.64).toFixed(2)),
+        temp  : parseFloat((22 + Math.random() * 1.5).toFixed(1)),
+        level : parseFloat((80 + Math.random() * 10).toFixed(1)),
+        event : evts[i] || null,
+    };
+});
+
+const SYS_INFO = [
+    { bg:'Версия',          en:'Version',    val:'v1.0.0'       },
+    { bg:'Местоположение',  en:'Location',   val:'43.2046°N'    },
+    { bg:'AI Модел',        en:'AI Model',   val:'Claude Sonnet'},
+    { bg:'EC Сензор',       en:'EC Sensor',  val:'DFRobot'      },
+    { bg:'Темп. Сензор',    en:'Temp Sensor',val:'DS18B20'      },
+    { bg:'MCU',             en:'MCU',        val:'ESP32'        },
+    { bg:'Протокол',        en:'Protocol',   val:'AUST-21'      },
+    { bg:'Статус',          en:'Status',     val:'ONLINE ●'     },
+];
+
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+let currentLang   = 'BG';
+let currentMode   = 'GLASS';
+let artifactCount = 1;
+const tdsData     = Array(30).fill(15.2);
 
 const MSG = {
-    BG: { init: "Системата е инициализирана", added: "Добавен артефакт", records: "записа", record: "запис", plateau: "ПЛАТО ДОСТИГНАТО", active: "АКТИВЕН ПРОЦЕС", online: "ОНЛАЙН", offline: "ОФЛАЙН" },
-    EN: { init: "System Initialized", added: "Artifact Added", records: "records", record: "record", plateau: "PLATEAU REACHED", active: "ACTIVE PROCESS", online: "ONLINE", offline: "OFFLINE" }
+    BG: {
+        plateau:'ПЛАТО. Стабилна соленост.',   active:'АКТИВНА ДИФУЗИЯ. Процесът продължава.',
+        added:'АРТЕФАКТЪТ Е ДОБАВЕН УСПЕШНО',  nodeAdded:'НОД РЕГИСТРИРАН',
+        init:'Системата АСОА е инициализирана.',
+        record:'запис', records:'записа',
+        success:'✓ УСПЕХ', warning:'⚠ ВНИМАНИЕ',
+        online:'ОНЛАЙН', offline:'ОФЛАЙН',
+        uptime:'Работи', mode:'Режим',
+        active_b:'● АКТИВЕН', standby_b:'○ СТЕНДБАЙ',
+        reduction:'Намаление:',
+        notes_lbl:'Бележки на оператора', tds_journey:'TDS Пътят на обезсоляването',
+        start:'НАЧАЛО', end:'КРАЙ',
+    },
+    EN: {
+        plateau:'PLATEAU. Salinity stable.',    active:'ACTIVE DIFFUSION. Process ongoing.',
+        added:'ARTIFACT REGISTERED SUCCESSFULLY', nodeAdded:'NODE REGISTERED',
+        init:'ASOA System initialized.',
+        record:'record', records:'records',
+        success:'✓ SUCCESS', warning:'⚠ WARNING',
+        online:'ONLINE', offline:'OFFLINE',
+        uptime:'Uptime', mode:'Mode',
+        active_b:'● ACTIVE', standby_b:'○ STANDBY',
+        reduction:'Reduction:',
+        notes_lbl:'Operator Notes', tds_journey:'TDS Desalination Journey',
+        start:'START', end:'END',
+    }
 };
 
-const MATERIAL_MODES = {
-    GLASS:   { name: "Стъкло", nameEn: "Glass", color: "#00f2ff", icon: "💎", target: 15.2, mix: "80/20", cycle: 14 },
-    CERAMIC: { name: "Керамика", nameEn: "Ceramic", color: "#ffea00", icon: "🏺", target: 12.5, mix: "60/40", cycle: 21 },
-    STONE:   { name: "Камък", nameEn: "Stone", color: "#00ff41", icon: "🗿", target: 8.0, mix: "50/50", cycle: 30 },
-    METAL:   { name: "Метал", nameEn: "Metal", color: "#ff003c", icon: "⚔️", target: 4.5, mix: "90/10", cycle: 45 }
+const MODE_CFG = {
+    GLASS   : { color:'#00f2ff', bg:'rgba(0,242,255,.06)' },
+    CERAMIC : { color:'#ffea00', bg:'rgba(255,234,0,.06)'  },
 };
 
 // ══════════════════════════════════════════════════
-// FUNCTIONS
+// CHART
 // ══════════════════════════════════════════════════
+const ctx = document.getElementById('mainChart').getContext('2d');
+const mainChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: Array(30).fill(''),
+        datasets: [{ data: [...tdsData], borderColor:'#00f2ff', borderWidth:2,
+            fill:true, backgroundColor:'rgba(0,242,255,.06)', tension:0.35, pointRadius:0 }]
+    },
+    options: {
+        responsive:true, maintainAspectRatio:false, animation:false,
+        scales: {
+            y: { grid:{ color:'#0d0d1a' }, ticks:{ color:'#444', font:{ size:9, family:'JetBrains Mono' } } },
+            x: { grid:{ display:false }, ticks:{ display:false } }
+        },
+        plugins: { legend:{ display:false } }
+    }
+});
 
-function logToTerminal(message, type = 'info') {
-    const term = document.getElementById('terminal');
-    if (!term) return;
-    const time = new Date().toLocaleTimeString('bg-BG', {hour12:false});
-    const color = type === 'error' ? '#ff003c' : '#00f2ff';
-    const div = document.createElement('div');
-    div.className = 'log-line';
-    div.innerHTML = `<span class="log-time">[${time}]</span><span class="log-arrow" style="color:${color}">>></span>${message}`;
-    term.prepend(div);
-    while (term.childElementCount > 50) term.removeChild(term.lastChild);
+// ══════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════
+function showTab(id) {
+    ['monitor','registry','analysis','config'].forEach(t => {
+        document.getElementById('tab-'+t).classList.remove('active');
+        document.getElementById('btn-'+t).classList.remove('active');
+    });
+    document.getElementById('tab-'+id).classList.add('active');
+    document.getElementById('btn-'+id).classList.add('active');
 }
 
+// ══════════════════════════════════════════════════
+// LANGUAGE
+// ══════════════════════════════════════════════════
+function toggleLanguage() {
+    currentLang = currentLang === 'BG' ? 'EN' : 'BG';
+    const k = currentLang.toLowerCase();
+    document.getElementById('lang-toggle').textContent = currentLang === 'BG' ? 'EN' : 'BG';
+    document.querySelectorAll('[data-bg][data-en]').forEach(el => {
+        const v = el.getAttribute('data-' + k);
+        if (v !== null) el.textContent = v;
+    });
+    document.getElementById('ref-label').textContent = currentLang === 'BG'
+        ? 'REF: Черно Море (15.5 ppt)' : 'REF: Black Sea (15.5 ppt)';
+    renderArchive(); renderArchiveStats();
+    renderNodes(); renderMatrix(); renderSysInfo();
+    updateArtifactCount();
+    addLog(MSG[currentLang].init);
+}
+
+// ══════════════════════════════════════════════════
+// TERMINAL
+// ══════════════════════════════════════════════════
+function addLog(msg) {
+    const t = document.getElementById('terminal');
+    const d = document.createElement('div');
+    d.className = 'log-line';
+    d.innerHTML = `<span class="log-time">[${new Date().toLocaleTimeString('bg-BG',{hour12:false})}]</span><span class="log-arrow">>></span>${msg}`;
+    t.prepend(d);
+    while (t.childElementCount > 50) t.removeChild(t.lastChild);
+}
+
+// ══════════════════════════════════════════════════
+// REGISTRY
+// ══════════════════════════════════════════════════
 function updateArtifactCount() {
     const m = MSG[currentLang];
-    document.getElementById('artifact-count').textContent = `${artifactCount} ${artifactCount === 1 ? m.record : m.records}`;
+    document.getElementById('artifact-count').textContent =
+        `${artifactCount} ${artifactCount === 1 ? m.record : m.records}`;
 }
-
 function addArtifact() {
     const n = document.getElementById('art-name');
     if (!n.value.trim()) { n.focus(); return; }
     artifactCount++;
-    const id = String(artifactCount).padStart(3,'0');
+    const id   = String(artifactCount).padStart(3,'0');
     const type = document.getElementById('art-type').value;
     const desc = document.getElementById('art-desc').value.trim() || '—';
-    
     const item = document.createElement('div');
-    item.className = 'arc-item';
+    item.className = 'artifact-item';
+    item.style.animation = 'fadeIn .3s ease';
     item.innerHTML = `
-        <div class="arc-bar" style="background:${MATERIAL_MODES[type].color}"></div>
-        <div style="flex:1">
-            <div style="font-size:11px; font-weight:700;">#${id} — ${n.value.trim()}</div>
-            <div style="font-size:9px; color:#444;">${type} | ${desc}</div>
-        </div>`;
+        <div>
+            <div style="font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;">#${id} — ${n.value.trim()}</div>
+            <div style="font-size:9px;color:#444;margin-top:3px;">${type} | ${desc}</div>
+        </div>
+        <span class="artifact-action">SELECT</span>`;
     document.getElementById('art-list').prepend(item);
     updateArtifactCount();
-    logToTerminal(`${MSG[currentLang].added}: ${n.value.trim()}`);
+    addLog(`${MSG[currentLang].added}: ${n.value.trim()}`);
     n.value = ''; document.getElementById('art-desc').value = '';
 }
 
-function showTab(tabId) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`tab-${tabId}`).classList.add('active');
-    document.getElementById(`btn-${tabId}`).classList.add('active');
-    logToTerminal(`SWITCH_TAB: ${tabId.toUpperCase()}`);
+// ══════════════════════════════════════════════════
+// MODE SELECTOR
+// ══════════════════════════════════════════════════
+function setMode(mode) {
+    currentMode = mode;
+    const cfg = MODE_CFG[mode];
+    mainChart.data.datasets[0].borderColor     = cfg.color;
+    mainChart.data.datasets[0].backgroundColor = cfg.bg;
+    mainChart.update('none');
+    document.getElementById('btn-mode-glass').className   = 'mode-btn ' + (mode==='GLASS'   ? 'active':'inactive');
+    document.getElementById('btn-mode-ceramic').className = 'mode-btn ' + (mode==='CERAMIC' ? 'active':'inactive');
+    renderMatrix(); // refresh active row
+    addLog(`MODE → ${mode}`);
 }
 
-async function syncWithESP() {
-    try {
-        // Замени с твоя истински URL
-        const response = await fetch('https://asoa.vercel.app/api/data'); 
-        const data = await response.json();
-
-        if (data && data.temp !== undefined) {
-            document.getElementById('tds-val').innerText = data.tds.toFixed(2);
-            document.getElementById('temp-val').innerText = data.temp.toFixed(1);
-            
-            const plateau = document.getElementById('plateau-status');
-            plateau.innerHTML = `LIDAR: ${data.dist}mm | EC: ${data.ec.toFixed(2)} mS/cm | STATUS: ACTIVE`;
-
-            if (mainChart) {
-                mainChart.data.datasets[0].data.push(data.tds);
-                mainChart.data.datasets[0].data.shift();
-                mainChart.update('none');
-            }
-        }
-    } catch (err) {
-        // Симулация за демонстрация, ако няма връзка
-        let last = parseFloat(document.getElementById('tds-val').innerText) || 15.0;
-        let fakeData = last + (Math.random() * 0.2 - 0.1);
-        document.getElementById('tds-val').innerText = fakeData.toFixed(2);
-    }
+// ══════════════════════════════════════════════════
+// REALTIME
+// ══════════════════════════════════════════════════
+function update() {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('bg-BG',{hour12:false});
+    let last = tdsData[tdsData.length-1];
+    let next = Math.max(14.5, Math.min(16.5, last + (Math.random()*.06-.03)));
+    tdsData.shift(); tdsData.push(next);
+    mainChart.data.datasets[0].data = [...tdsData];
+    mainChart.update('none');
+    document.getElementById('tds-val').textContent  = next.toFixed(2);
+    document.getElementById('temp-val').textContent = (18.5 + (Math.random()*.4-.2)).toFixed(1);
+    const w = tdsData.slice(-10), p = tdsData.slice(-20,-10);
+    const delta = Math.abs(w.reduce((a,b)=>a+b,0)/w.length - p.reduce((a,b)=>a+b,0)/p.length);
+    const m = MSG[currentLang];
+    document.getElementById('plateau-status').innerHTML = delta < 0.04
+        ? `<span style="color:#00ff88;font-weight:700;">${m.plateau}</span> &nbsp;Δ ${delta.toFixed(4)}`
+        : `<span style="color:#888;">${m.active}</span> &nbsp;Δ ${delta.toFixed(4)}`;
 }
 
-function initChart() {
-    const ctx = document.getElementById('mainChart').getContext('2d');
-    mainChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: Array(30).fill(''),
-            datasets: [{
-                data: Array(30).fill(15),
-                borderColor: '#00f2ff',
-                backgroundColor: 'rgba(0, 242, 255, 0.05)',
-                fill: true,
-                tension: 0.4,
-                borderWidth: 2,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: { grid: { color: '#111' }, ticks: { color: '#444' } },
-                x: { display: false }
-            },
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function renderMatrix() {
-    const isBg = currentLang === 'BG';
-    document.getElementById('matrix-tbody').innerHTML = Object.entries(MATERIAL_MODES).map(([k, mat]) => `
-        <tr style="border-bottom: 1px solid #111;">
-            <td style="padding:8px 0; color:${mat.color}; font-weight:700;">${mat.icon} ${isBg ? mat.name : mat.nameEn}</td>
-            <td style="text-align:right; color:#888;">${mat.target} ppt</td>
-            <td style="text-align:right; font-size:8px;">${k === currentMode ? '<span style="color:#00ff41">ACTIVE</span>' : 'STANDBY'}</td>
+// ══════════════════════════════════════════════════
+// ANALYSIS — LOG TABLE
+// ══════════════════════════════════════════════════
+function renderLogTable() {
+    document.getElementById('log-tbody').innerHTML = LOGS.map(r => `
+        <tr class="${r.event?'ev':''}">
+            <td style="color:#00f2ff;font-weight:700;">${r.time}</td>
+            <td class="r" style="color:#00f2ff;">${r.tds}</td>
+            <td class="r" style="color:#00ff41;">${r.ec}</td>
+            <td class="r" style="color:#ffea00;">${r.temp}</td>
+            <td class="r" style="color:#888;">${r.level}</td>
+            <td style="color:#ffea00;font-size:8px;font-style:italic;">${r.event||'—'}</td>
         </tr>`).join('');
 }
 
-function toggleLanguage() {
-    currentLang = currentLang === 'BG' ? 'EN' : 'BG';
-    document.getElementById('lang-toggle').innerText = currentLang === 'BG' ? 'EN' : 'BG';
-    renderMatrix();
-    logToTerminal(`LANG_CHANGED: ${currentLang}`);
+// ══════════════════════════════════════════════════
+// ANALYSIS — ARCHIVE
+// ══════════════════════════════════════════════════
+function renderArchive() {
+    const isBg = currentLang === 'BG';
+    document.getElementById('arc-list').innerHTML = ARCHIVE_DATA.map(arc => {
+        const mode  = MATERIAL_MODES[arc.mode];
+        const red   = (((arc.startTds - arc.endTds) / arc.startTds)*100).toFixed(1);
+        const days  = Math.round((new Date(arc.endDate)-new Date(arc.startDate))/86400000);
+        const ok    = arc.outcome === 'success';
+        const col   = ok ? '#00ff41':'#ffea00';
+        const bg    = ok ? 'rgba(0,255,65,.07)':'rgba(255,234,0,.07)';
+        const bdr   = ok ? 'rgba(0,255,65,.22)':'rgba(255,234,0,.22)';
+        const badge = ok ? MSG[currentLang].success : MSG[currentLang].warning;
+        return `
+        <div class="arc-item" onclick="openArcModal('${arc.id}')">
+            <div class="arc-bar" style="background:${col};"></div>
+            <div style="font-size:28px;flex-shrink:0;">${arc.img}</div>
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <span style="font-size:9px;font-weight:900;letter-spacing:.1em;color:${mode.color};">${arc.id}</span>
+                    <span style="font-size:8px;font-weight:900;text-transform:uppercase;padding:2px 8px;color:${col};background:${bg};border:1px solid ${bdr};">${badge}</span>
+                </div>
+                <div style="font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;margin-bottom:4px;">${isBg?arc.name:arc.nameEn}</div>
+                <div style="font-size:9px;color:#444;display:flex;gap:14px;flex-wrap:wrap;">
+                    <span>${isBg?arc.mat:arc.matEn}</span><span>${arc.discoverer}</span>
+                    <span>${arc.startDate} → ${arc.endDate} (${days}d)</span>
+                </div>
+            </div>
+            <div style="flex-shrink:0;text-align:right;">
+                <div style="font-size:8px;color:#444;text-transform:uppercase;margin-bottom:4px;">TDS</div>
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:900;">
+                    <span style="color:#ff003c;">${arc.startTds}</span>
+                    <span style="color:#333;">→</span>
+                    <span style="color:#00ff41;">${arc.endTds} ppt</span>
+                </div>
+                <div style="font-size:9px;color:#00ff41;font-weight:900;margin-top:2px;">↓ ${red}%</div>
+            </div>
+            <span style="color:#333;margin-left:4px;flex-shrink:0;">›</span>
+        </div>`;
+    }).join('');
+}
+
+function renderArchiveStats() {
+    const isBg = currentLang === 'BG';
+    const avg  = (ARCHIVE_DATA.reduce((a,x)=>a+(x.startTds-x.endTds),0)/ARCHIVE_DATA.length).toFixed(1);
+    const stats = [
+        { bg:'Завършени',        en:'Completed',       val:ARCHIVE_DATA.filter(a=>a.outcome==='success').length, col:'#00ff41' },
+        { bg:'С предупреждения', en:'Warnings',          val:ARCHIVE_DATA.filter(a=>a.outcome==='warning').length, col:'#ffea00' },
+        { bg:'Среден спад TDS',  en:'Avg TDS Drop',     val:`${avg} ppt`,                                         col:'#00f2ff' },
+        { bg:'Общо артефакти',   en:'Total Artifacts',  val:ARCHIVE_DATA.length,                                  col:'#ff003c' },
+    ];
+    document.getElementById('arc-stats').innerHTML = stats.map(s => `
+        <div class="card-dark" style="padding:14px;">
+            <div style="font-size:9px;color:#333;text-transform:uppercase;letter-spacing:.1em;font-weight:900;margin-bottom:8px;">${isBg?s.bg:s.en}</div>
+            <div style="font-size:22px;font-weight:900;color:${s.col};">${s.val}</div>
+        </div>`).join('');
+}
+
+function openArcModal(id) {
+    const arc  = ARCHIVE_DATA.find(a=>a.id===id);
+    if (!arc) return;
+    const isBg = currentLang === 'BG';
+    const mode = MATERIAL_MODES[arc.mode];
+    const red  = (((arc.startTds-arc.endTds)/arc.startTds)*100).toFixed(1);
+    const m    = MSG[currentLang];
+    const rows = [
+        [isBg?'Материал':'Material',    isBg?arc.mat:arc.matEn],
+        [isBg?'Откривател':'Discoverer', arc.discoverer],
+        [isBg?'Начало':'Start',          arc.startDate],
+        [isBg?'Край':'End',              arc.endDate],
+        ['GPS',                           arc.gps],
+        [isBg?'Режим':'Mode',            isBg?mode.name:mode.nameEn],
+    ].map(([l,v])=>`
+        <div class="info-cell">
+            <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">${l}</div>
+            <div style="font-size:11px;color:#fff;font-weight:700;">${v}</div>
+        </div>`).join('');
+    document.getElementById('arc-modal-content').innerHTML = `
+        <div style="padding:20px;border-bottom:1px solid #0d0d1a;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span style="font-size:28px;">${arc.img}</span>
+                <div>
+                    <div style="font-size:9px;color:#00ff41;font-weight:900;letter-spacing:.1em;">${arc.id}</div>
+                    <div style="font-size:14px;font-weight:900;color:#fff;text-transform:uppercase;">${isBg?arc.name:arc.nameEn}</div>
+                </div>
+            </div>
+            <button onclick="closeArcModal()" style="background:transparent;border:none;color:#555;cursor:pointer;font-size:18px;line-height:1;font-family:monospace;">✕</button>
+        </div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${rows}</div>
+            <div class="info-cell">
+                <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">${m.tds_journey}</div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:22px;font-weight:900;color:#ff003c;">${arc.startTds}</div>
+                        <div style="font-size:8px;color:#444;text-transform:uppercase;">${m.start} ppt</div>
+                    </div>
+                    <div style="flex:1;height:6px;background:#0d0d1a;overflow:hidden;">
+                        <div style="height:100%;background:linear-gradient(to right,#ff003c,#00ff41);width:100%;"></div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:22px;font-weight:900;color:#00ff41;">${arc.endTds}</div>
+                        <div style="font-size:8px;color:#444;text-transform:uppercase;">${m.end} ppt</div>
+                    </div>
+                </div>
+                <div style="text-align:center;font-size:9px;color:#888;margin-top:8px;">${m.reduction} <span style="color:#00ff41;font-weight:900;">${red}%</span></div>
+            </div>
+            <div class="info-cell">
+                <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">${m.notes_lbl}</div>
+                <p style="font-size:11px;color:#888;line-height:1.6;font-style:italic;margin:0;">${isBg?arc.notes:arc.notesEn}</p>
+            </div>
+        </div>`;
+    document.getElementById('arc-modal').classList.add('open');
+}
+function closeArcModal() { document.getElementById('arc-modal').classList.remove('open'); }
+document.getElementById('arc-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeArcModal(); });
+
+// ══════════════════════════════════════════════════
+// CONFIG — NODES
+// ══════════════════════════════════════════════════
+function toggleNodeForm() {
+    const f = document.getElementById('node-form');
+    f.style.display = f.style.display === 'block' ? 'none' : 'block';
+}
+function addNode() {
+    const id   = document.getElementById('node-id').value.trim();
+    const name = document.getElementById('node-name').value.trim();
+    const ip   = document.getElementById('node-ip').value.trim();
+    const mode = document.getElementById('node-mode').value;
+    if (!id || !name || !ip) return;
+    NODES.push({ id, name, status:'offline', ip, mode, uptime:'—', firmware:'v2.3.1' });
+    renderNodes();
+    addLog(`${MSG[currentLang].nodeAdded}: ${id}`);
+    ['node-id','node-name','node-ip'].forEach(k => document.getElementById(k).value = '');
+    document.getElementById('node-form').style.display = 'none';
+}
+function removeNode(idx) { NODES.splice(idx,1); renderNodes(); }
+
+function renderNodes() {
+    const isBg = currentLang === 'BG';
+    const m = MSG[currentLang];
+    document.getElementById('node-list').innerHTML = NODES.map((n,i) => {
+        const mode = MATERIAL_MODES[n.mode];
+        const on   = n.status === 'online';
+        const col  = on ? '#00ff41' : '#ff003c';
+        return `
+        <div class="node-item">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <span style="font-size:18px;">${on ? '📶' : '📵'}</span>
+                <div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                        <span style="font-size:9px;font-weight:900;color:#00f2ff;letter-spacing:.1em;">${n.id}</span>
+                        <span style="font-size:8px;font-weight:700;text-transform:uppercase;color:${col};">// ${on?m.online:m.offline}</span>
+                    </div>
+                    <div style="font-size:12px;font-weight:700;color:#fff;">${n.name}</div>
+                    <div style="font-size:9px;color:#444;margin-top:2px;">
+                        ${n.ip} // <span style="color:${mode.color};">${isBg?mode.name:mode.nameEn}</span> // FW: ${n.firmware}${on?` // ${m.uptime}: ${n.uptime}`:''}
+                    </div>
+                </div>
+            </div>
+            <button onclick="removeNode(${i})"
+                style="background:transparent;border:1px solid transparent;color:#333;cursor:pointer;padding:6px 8px;transition:all .2s;font-family:monospace;font-size:12px;"
+                onmouseover="this.style.color='#ff003c';this.style.borderColor='rgba(255,0,60,.3)';"
+                onmouseout="this.style.color='#333';this.style.borderColor='transparent';">✕</button>
+        </div>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// CONFIG — MATRIX
+// ══════════════════════════════════════════════════
+function renderMatrix() {
+    const isBg = currentLang === 'BG';
+    const m    = MSG[currentLang];
+    document.getElementById('matrix-tbody').innerHTML = Object.entries(MATERIAL_MODES).map(([k,mat]) => {
+        const isActive = k === currentMode;
+        return `
+        <tr style="${isActive?'background:rgba(13,13,26,.9);':''}">
+            <td style="font-weight:900;color:${mat.color};">${mat.icon} ${isBg?mat.name:mat.nameEn}</td>
+            <td class="r" style="color:#888;">${mat.mix}</td>
+            <td class="r" style="color:#00f2ff;">${mat.target} ppt</td>
+            <td class="r" style="color:#888;">${mat.cycle}d</td>
+            <td class="r">
+                ${isActive
+                    ? `<span style="font-size:8px;font-weight:900;text-transform:uppercase;color:#00ff41;">${m.active_b}</span>`
+                    : `<span style="font-size:8px;text-transform:uppercase;color:#333;">${m.standby_b}</span>`}
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// ══════════════════════════════════════════════════
+// CONFIG — SYSTEM INFO
+// ══════════════════════════════════════════════════
+function renderSysInfo() {
+    const isBg = currentLang === 'BG';
+    document.getElementById('sysinfo-grid').innerHTML = SYS_INFO.map(s => `
+        <div class="info-cell">
+            <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">${isBg?s.bg:s.en}</div>
+            <div style="font-size:11px;color:#fff;font-weight:700;">${s.val}</div>
+        </div>`).join('');
 }
 
 // ══════════════════════════════════════════════════
 // BOOT
 // ══════════════════════════════════════════════════
-window.onload = () => {
-    initChart();
-    renderMatrix();
+(function boot() {
+    addLog(MSG[currentLang].init);
     updateArtifactCount();
-    
-    setInterval(() => {
-        document.getElementById('clock').innerText = new Date().toLocaleTimeString('bg-BG');
-    }, 1000);
-
-    setInterval(syncWithESP, 3000);
-    logToTerminal(MSG[currentLang].init);
-};
-
+    renderLogTable();
+    renderArchive();
+    renderArchiveStats();
+    renderNodes();
+    renderMatrix();
+    renderSysInfo();
+    update();
+    setInterval(update, 2000);
+})();
 </script>
 </body>
 </html>
