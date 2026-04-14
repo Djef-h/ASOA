@@ -1,5 +1,5 @@
 {
-  "name": "asoa-iot",
+  "name": "asoa",
   "version": "1.0.0",
   "dependencies": {
     "@vercel/kv": "latest"
