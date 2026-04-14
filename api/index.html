@@ -943,6 +943,141 @@ function renderSysInfo() {
     setInterval(() => {
         document.getElementById('clock').innerText = new Date().toLocaleTimeString();
     }, 1000);
+    GLASS: { color: '#00f2ff' },
+    CERAMIC: { color: '#ffea00' },
+    STONE: { color: '#00ff41' },
+    METAL: { color: '#ff003c' }
+};
+
+// ══════════════════════════════════════════════════
+// CORE LOGIC & SYNC
+// ══════════════════════════════════════════════════
+
+// 1. СИНХРОНИЗАЦИЯ С ESP8266 ПРЕЗ VERCEL API
+async function syncWithESP() {
+    try {
+        const response = await fetch('/api/data');
+        if (!response.ok) throw new Error('Network error');
+        const data = await response.json();
+
+        // Ако имаме данни от сензорите
+        if (data && data.temp !== undefined) {
+            // Обновяване на главните стойности
+            document.getElementById('tds-val').innerText = data.tds.toFixed(2);
+            document.getElementById('temp-val').innerText = data.temp.toFixed(1);
+
+            // Обновяване на Plateau Engine статус
+            const plateau = document.getElementById('plateau-status');
+            const statusMsg = data.tds < 1.0 ? MSG[currentLang].plateau : MSG[currentLang].active;
+            plateau.innerHTML = `LIDAR: ${data.dist}mm | EC: ${data.ec.toFixed(2)} mS/cm<br>${statusMsg}`;
+
+            // Обновяване на графиката
+            updateChart(data.tds);
+
+            // Лог в терминала
+            logToTerminal(`DATA_SYNC: TDS=${data.tds} ppt | TEMP=${data.temp}°C`, 'info');
+        }
+    } catch (err) {
+        console.warn("API Sync pending...");
+    }
+}
+
+// 2. ФУНКЦИЯ ЗА ТЕРМИНАЛА
+function logToTerminal(message, type = 'info') {
+    const term = document.getElementById('terminal');
+    if (!term) return;
+    const time = new Date().toLocaleTimeString();
+    const color = type === 'error' ? '#ff003c' : '#00f2ff';
+    term.innerHTML += `<div class="log-line"><span class="log-time">[${time}]</span> <span class="log-arrow" style="color:${color}">>></span> ${message}</div>`;
+    term.scrollTop = term.scrollHeight;
+}
+
+// 3. УПРАВЛЕНИЕ НА ТАБОВЕТЕ
+function showTab(tabId) {
+    // Деактивираме всички панели и бутони
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+    // Активираме избрания
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    document.getElementById(`btn-${tabId}`).classList.add('active');
+    
+    logToTerminal(`SWITCHED_TO: ${tabId.toUpperCase()}`);
+}
+
+// 4. ЕЗИКОВА СМЯНА
+function toggleLanguage() {
+    currentLang = currentLang === 'BG' ? 'EN' : 'BG';
+    document.getElementById('lang-toggle').innerText = currentLang === 'BG' ? 'EN' : 'BG';
+    
+    document.querySelectorAll('.lang-text').forEach(el => {
+        el.innerText = currentLang === 'BG' ? el.getAttribute('data-bg') : el.getAttribute('data-en');
+    });
+    
+    // Обновяване на навигацията
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.innerText = currentLang === 'BG' ? btn.getAttribute('data-bg') : btn.getAttribute('data-en');
+    });
+
+    logToTerminal(`LANGUAGE_CHANGED: ${currentLang}`);
+}
+
+// 5. ГРАФИКА (Chart.js)
+let mainChart;
+function initChart() {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    mainChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array(20).fill(''),
+            datasets: [{
+                label: 'TDS (ppt)',
+                data: Array(20).fill(15.2),
+                borderColor: '#00f2ff',
+                backgroundColor: 'rgba(0, 242, 255, 0.05)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: '#111' }, ticks: { color: '#444' } },
+                x: { display: false }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function updateChart(newVal) {
+    if (!mainChart) return;
+    mainChart.data.datasets[0].data.push(newVal);
+    mainChart.data.datasets[0].data.shift();
+    mainChart.update('none');
+}
+
+// 6. ИНИЦИАЛИЗАЦИЯ ПРИ ЗАРЕЖДАНЕ
+window.onload = () => {
+    initChart();
+    
+    // Часовник
+    setInterval(() => {
+        document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    // Синхронизация с ESP8266 (през Vercel)
+    setInterval(syncWithESP, 3000);
+
+    logToTerminal(MSG[currentLang].init);
+};
+
+</script>
+</body>
+</html>
 })();
 </script>
 </body>
