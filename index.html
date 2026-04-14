@@ -630,7 +630,7 @@ function setMode(mode) {
 // ══════════════════════════════════════════════════
 // REALTIME
 // ══════════════════════════════════════════════════
-    /*async function update() {
+async function update() {
   try {
     const res  = await fetch('https://asoa.vercel.app/api/data');
     const data = await res.json();
@@ -645,7 +645,8 @@ function setMode(mode) {
   } catch {
     addLog('⚠ Няма връзка с ESP8266');
   }
-}*/
+}
+    /*
 function update() {
     document.getElementById('clock').textContent = new Date().toLocaleTimeString('bg-BG',{hour12:false});
     let last = tdsData[tdsData.length-1];
@@ -662,7 +663,7 @@ function update() {
         ? `<span style="color:#00ff88;font-weight:700;">${m.plateau}</span> &nbsp;Δ ${delta.toFixed(4)}`
         : `<span style="color:#888;">${m.active}</span> &nbsp;Δ ${delta.toFixed(4)}`;
 }
-
+*/
     
 // ══════════════════════════════════════════════════
 // ANALYSIS — LOG TABLE
